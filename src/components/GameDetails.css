@@ -1,9 +1,10 @@
-/* Game Details - macOS 26 Tahoe */
+/* Game Details - Inspector Panel */
 .game-details {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
   height: 100%;
+  animation: slideUp var(--duration-normal) var(--ease-out-expo);
 }
 
 .game-details-header {
@@ -11,68 +12,55 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 0.5px solid var(--separator-non-opaque);
 }
 
 .game-details-title {
-  font-size: var(--text-title2);
+  font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
   color: var(--label-primary);
   margin: 0;
+  line-height: 1.2;
 }
 
-.btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--label-secondary);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.btn-icon:hover {
-  background: var(--fill-primary);
-  color: var(--label-primary);
-}
-
-/* Detail Tabs */
+/* Segmented Control */
 .detail-tabs {
   display: flex;
-  gap: 1px;
-  padding: 1px;
-  background: var(--fill-tertiary);
+  padding: 2px;
+  background: var(--fill-secondary);
   border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 0.5px var(--separator-opaque);
 }
 
 .detail-tab {
   flex: 1;
-  height: 28px;
+  height: 24px;
   padding: 0 var(--space-3);
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
   color: var(--label-secondary);
-  font-size: var(--text-body);
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: all var(--duration-instant) var(--spring-smooth);
 }
 
-.detail-tab:hover {
+.detail-tab:hover:not(.active) {
   color: var(--label-primary);
 }
 
 .detail-tab.active {
-  background: var(--accent-blue);
-  color: #FFFFFF;
+  background: var(--material-content);
+  color: var(--label-primary);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.10),
+    inset 0 0 0 0.5px var(--separator-opaque);
 }
 
+/* Section Headers */
 .game-details-section {
   display: flex;
   flex-direction: column;
@@ -80,10 +68,10 @@
 }
 
 .game-details-section h3 {
-  font-size: var(--text-subheadline);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   color: var(--label-tertiary);
 }
 
@@ -97,7 +85,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: var(--text-body);
+  font-size: var(--text-base);
   color: var(--label-secondary);
 }
 
@@ -107,22 +95,23 @@
 
 .game-path {
   font-family: var(--font-mono);
-  font-size: var(--text-footnote);
+  font-size: var(--text-xs);
   word-break: break-all;
   padding: var(--space-2);
   background: var(--fill-tertiary);
-  border: 0.5px solid var(--border-separator);
   border-radius: var(--radius-sm);
   color: var(--label-secondary);
+  box-shadow: inset 0 0 0 0.5px var(--separator-non-opaque);
 }
 
+/* Actions */
 .game-details-actions {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   margin-top: auto;
   padding-top: var(--space-4);
-  border-top: 0.5px solid var(--border-separator);
+  border-top: 0.5px solid var(--separator-non-opaque);
 }
 
 .install-section {
@@ -132,10 +121,10 @@
 }
 
 .install-section h3 {
-  font-size: var(--text-subheadline);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   color: var(--label-tertiary);
 }
 
@@ -149,12 +138,20 @@
   text-align: center;
   padding: var(--space-4);
   background: var(--fill-tertiary);
-  border: 0.5px dashed var(--border-opaque);
+  border: 0.5px dashed var(--separator-opaque);
   border-radius: var(--radius-md);
 }
 
 .no-versions p {
   margin: var(--space-1) 0;
-  font-size: var(--text-callout);
+  font-size: var(--text-sm);
   color: var(--label-secondary);
+}
+
+.text-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--system-orange);
+  font-size: var(--text-sm);
 }

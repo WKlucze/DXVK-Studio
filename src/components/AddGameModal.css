@@ -1,24 +1,28 @@
-/* Add Game Modal - macOS 26 Tahoe Alert Style */
+/* Add Game Modal - Native Alert Style */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.50);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
-  animation: fadeIn var(--duration-fast) var(--ease-out);
+  animation: fadeIn var(--duration-fast) var(--ease-out-expo);
 }
 
 .modal {
   width: 100%;
-  max-width: 280px;
-  background: var(--bg-modal);
-  backdrop-filter: blur(40px) saturate(180%);
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  max-width: 300px;
+  background: var(--material-elevated);
+  backdrop-filter: var(--vibrancy-popover);
+  -webkit-backdrop-filter: var(--vibrancy-popover);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-elevated);
-  animation: modalSlide var(--duration-normal) var(--ease-out);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.15),
+    var(--glow-edge),
+    var(--shadow-xl);
+  animation: scaleIn var(--duration-normal) var(--spring-smooth);
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -31,10 +35,10 @@
   }
 }
 
-@keyframes modalSlide {
+@keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.92);
   }
 
   to {
@@ -47,12 +51,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-5);
-  border-bottom: 0.5px solid var(--border-separator);
+  padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
 .modal-header h2 {
-  font-size: var(--text-headline);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   color: var(--label-primary);
 }
@@ -61,42 +64,47 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: transparent;
+  width: 20px;
+  height: 20px;
+  background: var(--fill-primary);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 50%;
   color: var(--label-secondary);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: all var(--duration-instant) var(--ease-in-out);
 }
 
 .modal-close:hover {
-  background: var(--fill-primary);
+  background: var(--fill-secondary);
   color: var(--label-primary);
 }
 
+.modal-close:active {
+  transform: scale(0.9);
+}
+
 .modal-body {
-  padding: var(--space-5);
+  padding: 0 var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .modal-body p {
-  font-size: var(--text-subheadline);
+  font-size: var(--text-sm);
   color: var(--label-secondary);
   text-align: center;
+  line-height: 1.5;
 }
 
 .modal-actions {
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-4);
-  border-top: 0.5px solid var(--border-separator);
+  padding: var(--space-3) var(--space-4);
+  background: var(--fill-quaternary);
+  border-top: 0.5px solid var(--separator-non-opaque);
 }
 
 .modal-actions .btn {
   flex: 1;
-  min-width: 68px;
 }
