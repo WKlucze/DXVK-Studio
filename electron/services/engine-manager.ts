@@ -68,6 +68,69 @@ export function getCachedVersions(fork: DxvkFork): string[] {
 }
 
 /**
+ * Calculate directory size recursively
+ */
+function getDirectorySize(dirPath: string): number {
+  let size = 0
+
+  try {
+    const entries = readdirSync(dirPath, { withFileTypes: true })
+
+    for (const entry of entries) {
+      const fullPath = join(dirPath, entry.name)
+
+      if (entry.isFile()) {
+        const { statSync } = require('fs')
+        size += statSync(fullPath).size
+      } else if (entry.isDirectory()) {
+        size += getDirectorySize(fullPath)
+      }
+    }
+  } catch {
+    // Skip directories we can't read
+  }
+
+  return size
+}
+
+/**
+ * Get all cached engines across all forks with size info
+ */
+export function getAllCachedEngines(): Array<{
+  fork: DxvkFork
+  version: string
+  path: string
+  sizeBytes: number
+}> {
+  const engines: Array<{
+    fork: DxvkFork
+    version: string
+    path: string
+    sizeBytes: number
+  }> = []
+
+  const forks: DxvkFork[] = ['official', 'gplasync', 'nvapi']
+
+  for (const fork of forks) {
+    const versions = getCachedVersions(fork)
+
+    for (const version of versions) {
+      const versionPath = getVersionPath(fork, version)
+      const sizeBytes = getDirectorySize(versionPath)
+
+      engines.push({
+        fork,
+        version,
+        path: versionPath,
+        sizeBytes
+      })
+    }
+  }
+
+  return engines
+}
+
+/**
  * Fetch releases from GitHub API
  */
 export async function fetchReleases(fork: DxvkFork, limit = 10): Promise<DxvkRelease[]> {

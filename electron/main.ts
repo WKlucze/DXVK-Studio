@@ -9,7 +9,9 @@ import {
   getAvailableEngines,
   downloadEngine,
   isVersionCached,
-  getCachedVersions
+  getCachedVersions,
+  getAllCachedEngines,
+  deleteEngine
 } from './services/engine-manager'
 import {
   installDxvk,
@@ -219,6 +221,19 @@ ipcMain.handle('engines:download', async (_, fork: DxvkFork, version: string, ur
       mainWindow?.webContents.send('engines:downloadProgress', { fork, version, percent })
     })
     return { success: true, path }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('engines:getAllCached', async () => {
+  return getAllCachedEngines()
+})
+
+ipcMain.handle('engines:delete', async (_, fork: DxvkFork, version: string) => {
+  try {
+    deleteEngine(fork, version)
+    return { success: true }
   } catch (error) {
     return { success: false, error: (error as Error).message }
   }

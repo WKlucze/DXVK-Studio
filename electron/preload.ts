@@ -57,6 +57,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('engines:downloadProgress')
   },
 
+  // Get all cached engines with size info
+  getAllCachedEngines: () =>
+    ipcRenderer.invoke('engines:getAllCached') as Promise<Array<{
+      fork: DxvkFork
+      version: string
+      path: string
+      sizeBytes: number
+    }>>,
+
+  // Delete a cached engine
+  deleteEngine: (fork: DxvkFork, version: string) =>
+    ipcRenderer.invoke('engines:delete', fork, version) as Promise<{ success: boolean; error?: string }>,
+
   // ============================================
   // DXVK Deployment
   // ============================================
@@ -132,6 +145,13 @@ declare global {
       downloadEngine: (fork: DxvkFork, version: string, url: string) => Promise<{ success: boolean; path?: string; error?: string }>
       onDownloadProgress: (callback: (progress: DownloadProgress) => void) => void
       removeDownloadProgressListener: () => void
+      getAllCachedEngines: () => Promise<Array<{
+        fork: DxvkFork
+        version: string
+        path: string
+        sizeBytes: number
+      }>>
+      deleteEngine: (fork: DxvkFork, version: string) => Promise<{ success: boolean; error?: string }>
 
       // Deployment
       installDxvk: (gamePath: string, gameId: string, fork: DxvkFork, version: string, architecture: '32' | '64') =>

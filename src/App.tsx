@@ -237,43 +237,53 @@ function App() {
           </div>
         </header>
 
-        {/* Game Grid or Detail View */}
-        <div className="p-6">
-          {selectedGame ? (
-            <GameDetailView
-              game={selectedGame}
-              onBack={() => setSelectedGame(null)}
-              onUpdate={(updated) => {
-                setGames(prev => prev.map(g => g.id === updated.id ? updated : g))
-                setSelectedGame(updated)
-              }}
-            />
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {filteredGames.map(game => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    onClick={() => setSelectedGame(game)}
-                  />
-                ))}
-              </div>
-
-              {filteredGames.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <Gamepad2 className="w-16 h-16 text-studio-700 mb-4" />
-                  <h3 className="text-lg font-medium text-studio-400 mb-2">No games found</h3>
-                  <p className="text-studio-500 max-w-sm">
-                    {steamInstalled
-                      ? 'Click "Scan Steam" to detect installed games or "Add Game" to manually add a game.'
-                      : 'Steam not detected. Click "Add Game" to manually add games.'}
-                  </p>
+        {/* Main Content - View Switching */}
+        {activeView === 'engines' ? (
+          <EngineManagerView />
+        ) : activeView === 'games' ? (
+          <div className="p-6">
+            {selectedGame ? (
+              <GameDetailView
+                game={selectedGame}
+                onBack={() => setSelectedGame(null)}
+                onUpdate={(updated) => {
+                  setGames(prev => prev.map(g => g.id === updated.id ? updated : g))
+                  setSelectedGame(updated)
+                }}
+              />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                  {filteredGames.map(game => (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      onClick={() => setSelectedGame(game)}
+                    />
+                  ))}
                 </div>
-              )}
-            </>
-          )}
-        </div>
+
+                {filteredGames.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <Gamepad2 className="w-16 h-16 text-studio-700 mb-4" />
+                    <h3 className="text-lg font-medium text-studio-400 mb-2">No games found</h3>
+                    <p className="text-studio-500 max-w-sm">
+                      {steamInstalled
+                        ? 'Click "Scan Steam" to detect installed games or "Add Game" to manually add a game.'
+                        : 'Steam not detected. Click "Add Game" to manually add games.'}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="p-6 flex flex-col items-center justify-center py-20 text-center">
+            <Settings className="w-16 h-16 text-studio-700 mb-4" />
+            <h3 className="text-lg font-medium text-studio-400 mb-2">Coming Soon</h3>
+            <p className="text-studio-500">This view is under development.</p>
+          </div>
+        )}
       </main>
     </div>
   )
@@ -306,6 +316,135 @@ function NavItem({
       {icon}
       {label}
     </button>
+  )
+}
+
+// Engine Manager View Component
+function EngineManagerView() {
+  const [cachedEngines, setCachedEngines] = useState<Array<{
+    fork: DxvkFork
+    version: string
+    path: string
+    sizeBytes: number
+  }>>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isElectron) return
+
+    const fetchCached = async () => {
+      setIsLoading(true)
+      try {
+        const engines = await window.electronAPI.getAllCachedEngines()
+        setCachedEngines(engines)
+      } catch (error) {
+        console.error('Failed to fetch cached engines:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCached()
+  }, [])
+
+  const handleDelete = async (fork: DxvkFork, version: string) => {
+    if (!isElectron) return
+
+    const key = `${fork}-${version}`
+    setIsDeleting(key)
+
+    try {
+      const result = await window.electronAPI.deleteEngine(fork, version)
+      if (result.success) {
+        setCachedEngines(prev => prev.filter(e => !(e.fork === fork && e.version === version)))
+      }
+    } catch (error) {
+      console.error('Failed to delete engine:', error)
+    } finally {
+      setIsDeleting(null)
+    }
+  }
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+  }
+
+  const totalSize = cachedEngines.reduce((acc, e) => acc + e.sizeBytes, 0)
+
+  const forkLabels: Record<DxvkFork, string> = {
+    official: 'Official',
+    gplasync: 'GPL Async',
+    nvapi: 'NVAPI'
+  }
+
+  return (
+    <div className="animate-fade-in p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-studio-100">Engine Manager</h2>
+          <p className="text-studio-400 mt-1">Manage cached DXVK versions</p>
+        </div>
+        <div className="glass-card px-4 py-2">
+          <span className="text-sm text-studio-400">Total Cache: </span>
+          <span className="text-sm font-medium text-studio-200">{formatSize(totalSize)}</span>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw className="w-8 h-8 text-accent-vulkan animate-spin" />
+        </div>
+      ) : cachedEngines.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Download className="w-16 h-16 text-studio-700 mb-4" />
+          <h3 className="text-lg font-medium text-studio-400 mb-2">No cached engines</h3>
+          <p className="text-studio-500 max-w-sm">
+            DXVK versions will be cached here when you install them to games.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {cachedEngines.map((engine) => {
+            const key = `${engine.fork}-${engine.version}`
+            const deleting = isDeleting === key
+
+            return (
+              <div key={key} className="glass-card p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-accent-vulkan/20 flex items-center justify-center">
+                    <Download className="w-5 h-5 text-accent-vulkan" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-studio-200">{forkLabels[engine.fork]}</span>
+                      <span className="text-accent-glow font-mono">v{engine.version}</span>
+                    </div>
+                    <p className="text-sm text-studio-500">{formatSize(engine.sizeBytes)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDelete(engine.fork, engine.version)}
+                  disabled={deleting}
+                  className="btn-secondary flex items-center gap-2 text-accent-danger hover:bg-accent-danger/10"
+                >
+                  {deleting ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <X className="w-4 h-4" />
+                  )}
+                  Delete
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 

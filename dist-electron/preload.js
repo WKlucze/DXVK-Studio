@@ -35,6 +35,10 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   removeDownloadProgressListener: () => {
     electron.ipcRenderer.removeAllListeners("engines:downloadProgress");
   },
+  // Get all cached engines with size info
+  getAllCachedEngines: () => electron.ipcRenderer.invoke("engines:getAllCached"),
+  // Delete a cached engine
+  deleteEngine: (fork, version) => electron.ipcRenderer.invoke("engines:delete", fork, version),
   // ============================================
   // DXVK Deployment
   // ============================================

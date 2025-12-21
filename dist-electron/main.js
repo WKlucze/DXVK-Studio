@@ -290,6 +290,41 @@ function getCachedVersions(fork) {
     return [];
   }
 }
+function getDirectorySize(dirPath) {
+  let size = 0;
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isFile()) {
+        const { statSync } = require("fs");
+        size += statSync(fullPath).size;
+      } else if (entry.isDirectory()) {
+        size += getDirectorySize(fullPath);
+      }
+    }
+  } catch {
+  }
+  return size;
+}
+function getAllCachedEngines() {
+  const engines = [];
+  const forks = ["official", "gplasync", "nvapi"];
+  for (const fork of forks) {
+    const versions = getCachedVersions(fork);
+    for (const version of versions) {
+      const versionPath = getVersionPath(fork, version);
+      const sizeBytes = getDirectorySize(versionPath);
+      engines.push({
+        fork,
+        version,
+        path: versionPath,
+        sizeBytes
+      });
+    }
+  }
+  return engines;
+}
 async function fetchReleases(fork, limit = 10) {
   const repo = GITHUB_REPOS[fork];
   const url = `https://api.github.com/repos/${repo}/releases?per_page=${limit}`;
@@ -378,6 +413,12 @@ async function downloadEngine(fork, version, downloadUrl, onProgress) {
     fs.rmSync(tempPath, { force: true });
     fs.rmSync(versionPath, { recursive: true, force: true });
     throw error;
+  }
+}
+function deleteEngine(fork, version) {
+  const versionPath = getVersionPath(fork, version);
+  if (fs.existsSync(versionPath)) {
+    fs.rmSync(versionPath, { recursive: true, force: true });
   }
 }
 function getEngineDlls(fork, version, architecture) {
@@ -738,6 +779,17 @@ electron.ipcMain.handle("engines:download", async (_, fork, version, url) => {
       mainWindow == null ? void 0 : mainWindow.webContents.send("engines:downloadProgress", { fork, version, percent });
     });
     return { success: true, path: path2 };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+electron.ipcMain.handle("engines:getAllCached", async () => {
+  return getAllCachedEngines();
+});
+electron.ipcMain.handle("engines:delete", async (_, fork, version) => {
+  try {
+    deleteEngine(fork, version);
+    return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }
