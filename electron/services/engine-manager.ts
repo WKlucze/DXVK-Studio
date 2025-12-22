@@ -131,7 +131,7 @@ export function getAllCachedEngines(): Array<{
 }
 
 /**
- * Fetch releases from GitHub API
+ * Fetch releases from GitHub API with rate limit handling
  */
 export async function fetchReleases(fork: DxvkFork, limit = 10): Promise<DxvkRelease[]> {
   const repo = GITHUB_REPOS[fork]
@@ -145,6 +145,11 @@ export async function fetchReleases(fork: DxvkFork, limit = 10): Promise<DxvkRel
       }
     })
 
+    if (response.status === 403) {
+      console.warn('GitHub API rate limited - using fallback versions')
+      return getFallbackReleases(fork)
+    }
+
     if (!response.ok) {
       throw new Error(`GitHub API returned ${response.status}`)
     }
@@ -152,8 +157,43 @@ export async function fetchReleases(fork: DxvkFork, limit = 10): Promise<DxvkRel
     return await response.json() as DxvkRelease[]
   } catch (error) {
     console.error(`Failed to fetch releases for ${fork}:`, error)
-    return []
+    return getFallbackReleases(fork)
   }
+}
+
+/**
+ * Fallback releases when GitHub API is unavailable
+ */
+function getFallbackReleases(fork: DxvkFork): DxvkRelease[] {
+  // Updated December 2024 - check GitHub for latest versions
+  const fallbackData: Record<DxvkFork, { versions: string[], assetPrefix: string }> = {
+    official: {
+      versions: ['2.5.2', '2.5.1', '2.5', '2.4.1', '2.4', '2.3.1'],
+      assetPrefix: 'dxvk'
+    },
+    gplasync: {
+      versions: ['2.5.2', '2.5.1', '2.5', '2.4.1', '2.4'],
+      assetPrefix: 'dxvk-gplasync'
+    },
+    nvapi: {
+      versions: ['0.7.1', '0.7.0', '0.6.9', '0.6.8', '0.6.7'],
+      assetPrefix: 'dxvk-nvapi'
+    }
+  }
+
+  const repo = GITHUB_REPOS[fork]
+  const data = fallbackData[fork]
+
+  return data.versions.map(version => ({
+    tag_name: `v${version}`,
+    name: `DXVK ${version}`,
+    published_at: new Date().toISOString(),
+    body: 'Fallback version (API rate limited)',
+    assets: [{
+      name: `${data.assetPrefix}-${version}.tar.gz`,
+      browser_download_url: `https://github.com/${repo}/releases/download/v${version}/${data.assetPrefix}-${version}.tar.gz`
+    }]
+  }))
 }
 
 /**
@@ -250,7 +290,13 @@ export async function downloadEngine(
       }
     }
 
-    fileStream.close()
+    // Wait for stream to finish writing
+    await new Promise<void>((resolve, reject) => {
+      fileStream.end((err: Error | null | undefined) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
 
     // Extract the tarball
     await extract({

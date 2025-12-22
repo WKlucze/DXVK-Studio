@@ -335,14 +335,46 @@ async function fetchReleases(fork, limit = 10) {
         "User-Agent": "DXVK-Studio"
       }
     });
+    if (response.status === 403) {
+      console.warn("GitHub API rate limited - using fallback versions");
+      return getFallbackReleases(fork);
+    }
     if (!response.ok) {
       throw new Error(`GitHub API returned ${response.status}`);
     }
     return await response.json();
   } catch (error) {
     console.error(`Failed to fetch releases for ${fork}:`, error);
-    return [];
+    return getFallbackReleases(fork);
   }
+}
+function getFallbackReleases(fork) {
+  const fallbackData = {
+    official: {
+      versions: ["2.5.2", "2.5.1", "2.5", "2.4.1", "2.4", "2.3.1"],
+      assetPrefix: "dxvk"
+    },
+    gplasync: {
+      versions: ["2.5.2", "2.5.1", "2.5", "2.4.1", "2.4"],
+      assetPrefix: "dxvk-gplasync"
+    },
+    nvapi: {
+      versions: ["0.7.1", "0.7.0", "0.6.9", "0.6.8", "0.6.7"],
+      assetPrefix: "dxvk-nvapi"
+    }
+  };
+  const repo = GITHUB_REPOS[fork];
+  const data = fallbackData[fork];
+  return data.versions.map((version) => ({
+    tag_name: `v${version}`,
+    name: `DXVK ${version}`,
+    published_at: (/* @__PURE__ */ new Date()).toISOString(),
+    body: "Fallback version (API rate limited)",
+    assets: [{
+      name: `${data.assetPrefix}-${version}.tar.gz`,
+      browser_download_url: `https://github.com/${repo}/releases/download/v${version}/${data.assetPrefix}-${version}.tar.gz`
+    }]
+  }));
 }
 function releaseToEngine(release, fork) {
   const asset = release.assets.find(
@@ -401,7 +433,12 @@ async function downloadEngine(fork, version, downloadUrl, onProgress) {
         onProgress(Math.round(downloadedBytes / contentLength * 100));
       }
     }
-    fileStream.close();
+    await new Promise((resolve, reject) => {
+      fileStream.end((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
     await tar.extract({
       file: tempPath,
       cwd: versionPath,
