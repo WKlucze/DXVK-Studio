@@ -131,9 +131,20 @@ export function getAllCachedEngines(): Array<{
 }
 
 /**
- * Fetch releases from GitHub API with rate limit handling
+ * Fetch releases from GitHub or GitLab API depending on fork
  */
 export async function fetchReleases(fork: DxvkFork, limit = 10): Promise<DxvkRelease[]> {
+  // GPL Async is on GitLab, others are on GitHub
+  if (fork === 'gplasync') {
+    return fetchGitLabReleases(limit)
+  }
+  return fetchGitHubReleases(fork, limit)
+}
+
+/**
+ * Fetch releases from GitHub API
+ */
+async function fetchGitHubReleases(fork: DxvkFork, limit: number): Promise<DxvkRelease[]> {
   const repo = GITHUB_REPOS[fork]
   const url = `https://api.github.com/repos/${repo}/releases?per_page=${limit}`
 
@@ -162,22 +173,81 @@ export async function fetchReleases(fork: DxvkFork, limit = 10): Promise<DxvkRel
 }
 
 /**
- * Fallback releases when GitHub API is unavailable
+ * Fetch releases from GitLab API for GPL Async
+ */
+async function fetchGitLabReleases(limit: number): Promise<DxvkRelease[]> {
+  const url = `https://gitlab.com/api/v4/projects/Ph42oN%2Fdxvk-gplasync/releases?per_page=${limit}`
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'DXVK-Studio'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`GitLab API returned ${response.status}`)
+    }
+
+    // Convert GitLab release format to our DxvkRelease format
+    const gitlabReleases = await response.json() as Array<{
+      tag_name: string
+      name: string
+      released_at: string
+      description: string
+      assets: {
+        links: Array<{
+          name: string
+          direct_asset_url: string
+        }>
+      }
+    }>
+
+    return gitlabReleases.map(release => {
+      // Find the tar.gz asset link
+      const tarGzLink = release.assets.links.find(l => l.name.endsWith('.tar.gz'))
+
+      return {
+        tag_name: release.tag_name,
+        name: release.name,
+        published_at: release.released_at,
+        body: release.description,
+        assets: tarGzLink ? [{
+          name: tarGzLink.name,
+          browser_download_url: tarGzLink.direct_asset_url
+        }] : []
+      }
+    })
+  } catch (error) {
+    console.error('Failed to fetch releases from GitLab:', error)
+    return getFallbackReleases('gplasync')
+  }
+}
+
+/**
+ * Fallback releases when API is unavailable
  */
 function getFallbackReleases(fork: DxvkFork): DxvkRelease[] {
-  // Updated December 2024 - these are actual GitHub release versions
-  // Official: https://github.com/doitsujin/dxvk/releases
-  // GPL Async: https://github.com/Sporif/dxvk-async/releases (older versions)
-  // NVAPI: https://github.com/jp7677/dxvk-nvapi/releases
-  const fallbackData: Record<DxvkFork, { versions: string[], assetPrefix: string }> = {
+  // GPL Async is on GitLab with different URL structure
+  if (fork === 'gplasync') {
+    const gplVersions = ['2.7.1-1', '2.7-1', '2.6.2-1', '2.6.1-1', '2.6-1', '2.5.3-1']
+    return gplVersions.map(version => ({
+      tag_name: `v${version}`,
+      name: `DXVK GPL Async ${version}`,
+      published_at: new Date().toISOString(),
+      body: 'Fallback version (API unavailable)',
+      assets: [{
+        name: `dxvk-gplasync-v${version}.tar.gz`,
+        browser_download_url: `https://gitlab.com/Ph42oN/dxvk-gplasync/-/raw/main/releases/dxvk-gplasync-v${version}.tar.gz?ref_type=heads`
+      }]
+    }))
+  }
+
+  // GitHub forks (Official and NVAPI)
+  const fallbackData: Record<'official' | 'nvapi', { versions: string[], assetPrefix: string }> = {
     official: {
       versions: ['2.7.1', '2.7', '2.6.1', '2.5.3', '2.5.1', '2.5', '2.4.1'],
       assetPrefix: 'dxvk'
-    },
-    gplasync: {
-      // GPL Async fork - check if these versions exist
-      versions: ['2.4', '2.3.1', '2.3', '2.2', '2.1'],
-      assetPrefix: 'dxvk-async'
     },
     nvapi: {
       versions: ['0.7.1', '0.7.0', '0.6.9', '0.6.8', '0.6.7'],
@@ -186,7 +256,7 @@ function getFallbackReleases(fork: DxvkFork): DxvkRelease[] {
   }
 
   const repo = GITHUB_REPOS[fork]
-  const data = fallbackData[fork]
+  const data = fallbackData[fork as 'official' | 'nvapi']
 
   return data.versions.map(version => {
     // NVAPI uses 'v' prefix in asset filename, others don't

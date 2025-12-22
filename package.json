@@ -3,6 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "description": "Professional DXVK management suite for Windows",
+  "author": "Zendevve",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zendevve/dxvk-studio"
+  },
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
