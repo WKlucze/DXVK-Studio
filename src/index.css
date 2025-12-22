@@ -53,7 +53,7 @@
   }
 
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full;
+    @apply inline-flex items-center px-2 py-1 text-xs font-medium rounded-full;
   }
 
   .badge-32bit {
