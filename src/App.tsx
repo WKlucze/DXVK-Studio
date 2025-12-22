@@ -62,21 +62,37 @@ function App() {
     setIsScanning(true)
     try {
       const scannedGames = await window.electronAPI.scanSteamLibrary()
-      setGames(scannedGames.map((g: Partial<Game>, i: number) => ({
-        id: g.id || `game-${i}`,
+      const newSteamGames = scannedGames.map((g: Partial<Game>, i: number) => ({
+        id: g.id || `steam-${i}`,
         name: g.name || 'Unknown Game',
         path: g.path || '',
         executable: g.executable || '',
         architecture: g.architecture || 'unknown',
-        platform: g.platform || 'manual',
+        platform: 'steam' as const,
         steamAppId: g.steamAppId,
         dxvkStatus: g.dxvkStatus || 'inactive',
         dxvkVersion: g.dxvkVersion,
         dxvkFork: g.dxvkFork,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      } as Game)))
-      showNotification('success', `Found ${scannedGames.length} games`)
+      } as Game))
+
+      // Merge: keep manual games, update/add steam games
+      setGames(prev => {
+        const manualGames = prev.filter(g => g.platform === 'manual')
+
+        // Update existing steam games or add new ones
+        const updatedSteamGames = newSteamGames.map(newGame => {
+          const existing = prev.find(g => g.steamAppId === newGame.steamAppId)
+          if (existing) {
+            return { ...existing, ...newGame, createdAt: existing.createdAt }
+          }
+          return newGame
+        })
+
+        return [...manualGames, ...updatedSteamGames]
+      })
+      showNotification('success', `Found ${scannedGames.length} Steam games`)
     } catch (error) {
       showNotification('error', 'Failed to scan Steam library')
       console.error(error)
