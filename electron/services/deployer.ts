@@ -276,9 +276,20 @@ export function parseConfigFile(content: string): DxvkConfig {
           config.numCompilerThreads = Number(value)
           break
         case 'dxvk.hud':
-        case 'DXVK_HUD':
-          config.hud = value.split(',').map(s => s.trim()).filter(s => s.length > 0)
+        case 'DXVK_HUD': {
+          const items = value.split(',').map(s => s.trim()).filter(s => s.length > 0)
+          const scaleItem = items.find(s => s.startsWith('scale='))
+
+          if (scaleItem) {
+            const scaleVal = parseFloat(scaleItem.split('=')[1])
+            if (!isNaN(scaleVal)) {
+              config.hudScale = scaleVal
+            }
+          }
+
+          config.hud = items.filter(s => !s.startsWith('scale='))
           break
+        }
         case 'dxgi.customVendorId':
           config.customVendorId = value
           break
@@ -358,8 +369,13 @@ export function generateConfigFile(config: DxvkConfig): string {
     lines.push(`dxgi.enableHDR = ${config.enableHDR}`)
   }
 
-  if (config.hud && config.hud.length > 0) {
-    lines.push(`DXVK_HUD = ${config.hud.join(',')}`)
+  const hudItems = [...(config.hud || [])]
+  if (config.hudScale !== undefined) {
+    hudItems.push(`scale=${config.hudScale}`)
+  }
+
+  if (hudItems.length > 0) {
+    lines.push(`DXVK_HUD = ${hudItems.join(',')}`)
   }
 
   if (config.logLevel) {

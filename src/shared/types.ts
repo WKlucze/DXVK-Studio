@@ -88,6 +88,14 @@ export const DEFAULT_DXVK_CONFIG: DxvkConfig = {
   logLevel: 'warn'
 }
 
+
+export interface DxvkProfile extends DxvkConfig {
+  id: string
+  name: string
+  description?: string
+  isBuiltin?: boolean
+}
+
 // ============================================
 // PE Analysis Types
 // ============================================

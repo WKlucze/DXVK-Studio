@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { DxvkFork, DxvkConfig, Game, DxvkEngine, PEAnalysisResult } from '../src/shared/types'
+import type { DxvkFork, DxvkConfig, Game, DxvkEngine, PEAnalysisResult, DxvkProfile } from '../src/shared/types'
 
 // Type for download progress events
 export interface DownloadProgress {
@@ -112,6 +112,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveConfig: (gamePath: string, config: DxvkConfig) =>
     ipcRenderer.invoke('config:save', gamePath, config) as Promise<{ success: boolean; error?: string }>,
 
+
+  // ============================================
+  // Profiles
+  // ============================================
+  getAllProfiles: () => ipcRenderer.invoke('profiles:getAll') as Promise<DxvkProfile[]>,
+  saveProfile: (profile: DxvkProfile) => ipcRenderer.invoke('profiles:save', profile) as Promise<{ success: boolean; profile?: DxvkProfile; error?: string }>,
+  deleteProfile: (id: string) => ipcRenderer.invoke('profiles:delete', id) as Promise<{ success: boolean; error?: string }>,
+
   // ============================================
   // Anti-Cheat Detection
   // ============================================
@@ -188,6 +196,11 @@ declare global {
       // Config
       readConfig: (gamePath: string) => Promise<DxvkConfig | null>
       saveConfig: (gamePath: string, config: DxvkConfig) => Promise<{ success: boolean; error?: string }>
+
+      // Profiles
+      getAllProfiles: () => Promise<DxvkProfile[]>
+      saveProfile: (profile: DxvkProfile) => Promise<{ success: boolean; profile?: DxvkProfile; error?: string }>
+      deleteProfile: (id: string) => Promise<{ success: boolean; error?: string }>
 
       // Anti-Cheat
       detectAntiCheat: (gamePath: string) => Promise<Array<{

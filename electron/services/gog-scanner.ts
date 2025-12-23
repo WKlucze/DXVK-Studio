@@ -1,24 +1,46 @@
-import { exec } from 'child_process'
-import { promisify } from 'util'
+import { spawn } from 'child_process'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import type { Game } from '../../src/shared/types'
 import { randomUUID } from 'crypto'
 
-const execAsync = promisify(exec)
-
 // Registry key for GOG games
 const GOG_REGISTRY_KEY = 'HKLM\\SOFTWARE\\WOW6432Node\\GOG.com\\Games'
+
+/**
+ * Safe registry query using spawn (no shell interpolation)
+ */
+function queryRegistry(key: string, recursive = false): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const args = ['query', key]
+    if (recursive) args.push('/s')
+
+    const proc = spawn('reg', args, { shell: false, windowsHide: true })
+
+    let stdout = ''
+    let stderr = ''
+
+    proc.stdout.on('data', (data) => { stdout += data.toString() })
+    proc.stderr.on('data', (data) => { stderr += data.toString() })
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout)
+      } else {
+        reject(new Error(stderr || `reg query failed with code ${code}`))
+      }
+    })
+
+    proc.on('error', reject)
+  })
+}
 
 export async function findGogGames(): Promise<Game[]> {
   const games: Game[] = []
 
   try {
     // 1. Query Registry for GOG Games
-    // Output format:
-    // HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\GOG.com\Games\1207658930
-    // HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\GOG.com\Games\1423658930
-    const { stdout } = await execAsync(`reg query "${GOG_REGISTRY_KEY}"`)
+    const stdout = await queryRegistry(GOG_REGISTRY_KEY)
 
     const lines = stdout.split('\n').filter(line => line.trim().length > 0)
     const gameKeys = lines.filter(line => line.includes('GOG.com\\Games\\'))
@@ -28,15 +50,8 @@ export async function findGogGames(): Promise<Game[]> {
         const gameId = key.split('\\').pop()?.trim()
         if (!gameId) continue
 
-        // Query details for each game
-        // We need: PATH, EXE, possibly DISPLAYNAME (usually in Uninstall key, but check here first)
-        // Usually GOG registry keys have: 'path', 'exe', 'workingDir', 'launchCommand'?
-        // The standard keys for GOG installers:
-        // 'path' (Install location)
-        // 'exe' (Main executable relative to path)
-        // 'gameName' (Title)
-
-        const { stdout: details } = await execAsync(`reg query "${key.trim()}" /s`)
+        // Query details for each game using safe spawn
+        const details = await queryRegistry(key.trim(), true)
 
         const pathMatch = details.match(/\s+path\s+REG_SZ\s+(.+)/i)
         const exeMatch = details.match(/\s+exe\s+REG_SZ\s+(.+)/i)
@@ -51,13 +66,13 @@ export async function findGogGames(): Promise<Game[]> {
             games.push({
               id: `gog-${randomUUID()}`,
               name,
-              path: installDir, // Legacy support
-              executable: exePath, // Legacy support
+              path: installDir,
+              executable: exePath,
               platform: 'gog',
               dxvkStatus: 'inactive',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              architecture: 'unknown' // Will be analyzed later
+              architecture: 'unknown'
             })
           }
         }
@@ -68,10 +83,14 @@ export async function findGogGames(): Promise<Game[]> {
     }
 
   } catch (error) {
-    if ((error as any).code !== 1) { // Code 1 means key not found (no GOG games)
+    // Code 1 means key not found (no GOG games) - this is expected
+    if ((error as any).message?.includes('code 1')) {
+      // Silent - no GOG installed
+    } else {
       console.error('Error scanning GOG registry:', error)
     }
   }
 
   return games
 }
+

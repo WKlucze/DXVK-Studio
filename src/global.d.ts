@@ -8,7 +8,8 @@ import type {
   DxvkFork,
   DxvkEngine,
   DxvkConfig,
-  PEAnalysisResult
+  PEAnalysisResult,
+  DxvkProfile
 } from './shared/types'
 
 // Download progress type
@@ -73,6 +74,11 @@ declare global {
       // Config
       readConfig: (gamePath: string) => Promise<DxvkConfig | null>
       saveConfig: (gamePath: string, config: DxvkConfig) => Promise<{ success: boolean; error?: string }>
+
+      // Profiles
+      getAllProfiles: () => Promise<DxvkProfile[]>
+      saveProfile: (profile: DxvkProfile) => Promise<{ success: boolean; profile?: DxvkProfile; error?: string }>
+      deleteProfile: (id: string) => Promise<{ success: boolean; error?: string }>
 
       // Anti-Cheat
       detectAntiCheat: (gamePath: string) => Promise<Array<{

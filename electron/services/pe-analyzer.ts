@@ -150,9 +150,7 @@ export function findGameExecutables(gamePath: string): string[] {
   return executables
 }
 
-import { exec } from 'child_process'
-import { promisify } from 'util'
-const execAsync = promisify(exec)
+import { spawn } from 'child_process'
 
 export interface PeVersionInfo {
   ProductName?: string
@@ -161,18 +159,38 @@ export interface PeVersionInfo {
 }
 
 export async function getPeVersionInfo(exePath: string): Promise<PeVersionInfo> {
-  try {
-    // Sanitize path for PowerShell
-    const safePath = exePath.replace(/'/g, "''")
-    const command = `powershell -NoProfile -Command "(Get-Item '${safePath}').VersionInfo | Select-Object ProductName, FileDescription, OriginalFilename | ConvertTo-Json"`
+  return new Promise((resolve) => {
+    try {
+      // Use spawn with args array to avoid shell interpolation (command injection prevention)
+      const script = `(Get-Item -LiteralPath '${exePath.replace(/'/g, "''")}').VersionInfo | Select-Object ProductName, FileDescription, OriginalFilename | ConvertTo-Json`
 
-    const { stdout } = await execAsync(command)
-    if (!stdout.trim()) return {}
+      const ps = spawn('powershell', ['-NoProfile', '-Command', script], {
+        shell: false,
+        windowsHide: true
+      })
 
-    // PowerShell might return a single object or array, validation needed or try/catch parsing
-    return JSON.parse(stdout)
-  } catch (error) {
-    // Silently fail if PowerShell fails or property missing
-    return {}
-  }
+      let stdout = ''
+      let stderr = ''
+
+      ps.stdout.on('data', (data) => { stdout += data.toString() })
+      ps.stderr.on('data', (data) => { stderr += data.toString() })
+
+      ps.on('close', (code) => {
+        if (code !== 0 || !stdout.trim()) {
+          resolve({})
+          return
+        }
+
+        try {
+          resolve(JSON.parse(stdout))
+        } catch {
+          resolve({})
+        }
+      })
+
+      ps.on('error', () => resolve({}))
+    } catch {
+      resolve({})
+    }
+  })
 }

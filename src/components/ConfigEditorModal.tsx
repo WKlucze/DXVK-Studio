@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Check, RefreshCw, AlertTriangle, Monitor, Zap, Gauge, FileText } from 'lucide-react'
-import type { DxvkConfig } from '../shared/types'
+import type { DxvkConfig, DxvkProfile } from '../shared/types'
 
 interface ConfigEditorModalProps {
   isOpen: boolean
@@ -25,12 +25,26 @@ export function ConfigEditorModal({ isOpen, gamePath, onClose, onSave }: ConfigE
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Load config when modal opens
+  const [profiles, setProfiles] = useState<DxvkProfile[]>([])
+  const [showSaveProfile, setShowSaveProfile] = useState(false)
+  const [newProfileName, setNewProfileName] = useState('')
+
+  // Load config and profiles when modal opens
   useEffect(() => {
     if (isOpen) {
       loadConfig()
+      loadProfiles()
     }
   }, [isOpen, gamePath])
+
+  const loadProfiles = async () => {
+    try {
+      const all = await window.electronAPI.getAllProfiles()
+      setProfiles(all)
+    } catch (err) {
+      console.error('Failed to load profiles:', err)
+    }
+  }
 
   const loadConfig = async () => {
     setLoading(true)
@@ -71,6 +85,48 @@ export function ConfigEditorModal({ isOpen, gamePath, onClose, onSave }: ConfigE
     setConfig({ ...config, hud: newHud })
   }
 
+  const handleApplyProfile = (profileId: string) => {
+    if (!profileId) return
+    const profile = profiles.find(p => p.id === profileId)
+    if (profile) {
+      // Create a config object without profile metadata
+      const { id, name, description, isBuiltin, ...configOnly } = profile
+      setConfig(prev => ({ ...prev, ...configOnly }))
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    if (!newProfileName.trim()) return
+    try {
+      const { id, name, description, isBuiltin, ...currentConfig } = (config as any)
+
+      const newProfile: DxvkProfile = {
+        ...currentConfig,
+        id: '',
+        name: newProfileName,
+        isBuiltin: false
+      }
+
+      const result = await window.electronAPI.saveProfile(newProfile)
+      if (result.success) {
+        setNewProfileName('')
+        setShowSaveProfile(false)
+        loadProfiles()
+      }
+    } catch (err) {
+      console.error('Failed to save profile', err)
+    }
+  }
+
+  const handleDeleteProfile = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    // In a real app we'd use a better dialog, but this works for MVP
+    if (window.confirm('Delete this profile?')) {
+      await window.electronAPI.deleteProfile(id)
+      loadProfiles()
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -104,6 +160,64 @@ export function ConfigEditorModal({ isOpen, gamePath, onClose, onSave }: ConfigE
             </div>
           ) : (
             <>
+              {/* Profiles Section */}
+              <div className="bg-studio-800/50 rounded-lg p-4 border border-studio-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-medium text-studio-200">Configuration Profile</h4>
+                  {showSaveProfile ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newProfileName}
+                        onChange={(e) => setNewProfileName(e.target.value)}
+                        placeholder="Profile Name"
+                        className="bg-studio-900 border border-studio-700 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-accent-vulkan w-40"
+                        autoFocus
+                      />
+                      <button onClick={handleSaveProfile} className="text-green-500 hover:text-green-400">
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setShowSaveProfile(false)} className="text-red-500 hover:text-red-400">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowSaveProfile(true)}
+                      className="text-xs text-accent-vulkan hover:text-accent-vulkan/80"
+                    >
+                      Save Current as Profile
+                    </button>
+                  )}
+                </div>
+
+                <select
+                  className="w-full bg-studio-900 border border-studio-700 rounded-md px-3 py-2 text-studio-100 focus:outline-none focus:border-accent-vulkan"
+                  onChange={(e) => handleApplyProfile(e.target.value)}
+                  value=""
+                >
+                  <option value="" disabled>Select a profile to apply...</option>
+                  {profiles.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} {p.isBuiltin ? '(Built-in)' : ''}
+                    </option>
+                  ))}
+                </select>
+
+                {profiles.some(p => !p.isBuiltin) && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {profiles.filter(p => !p.isBuiltin).map(p => (
+                      <div key={p.id} className="group flex items-center gap-2 bg-studio-900 px-2 py-1 rounded text-xs text-studio-300 border border-studio-800">
+                        {p.name}
+                        <button onClick={(e) => handleDeleteProfile(p.id, e)} className="text-studio-500 hover:text-red-400">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {error && (
                 <div className="bg-accent-danger/10 border border-accent-danger/20 rounded-lg p-4 flex items-center gap-3 text-accent-danger">
                   <AlertTriangle className="w-5 h-5" />
@@ -137,6 +251,30 @@ export function ConfigEditorModal({ isOpen, gamePath, onClose, onSave }: ConfigE
                       <span className="text-sm font-medium">{option.label}</span>
                     </label>
                   ))}
+                </div>
+
+                {/* HUD Scale */}
+                <div className="mt-4 bg-studio-800/50 p-4 rounded-lg border border-studio-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm font-medium text-studio-200">HUD Scale</label>
+                    <span className="text-sm text-accent-vulkan font-mono">
+                      {(config.hudScale ?? 1.0).toFixed(1)}x
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.1"
+                    value={config.hudScale ?? 1.0}
+                    onChange={(e) => setConfig({ ...config, hudScale: parseFloat(e.target.value) })}
+                    className="w-full accent-accent-vulkan h-2 bg-studio-700 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-studio-500 mt-1">
+                    <span>0.5x</span>
+                    <span>1.0x</span>
+                    <span>2.0x</span>
+                  </div>
                 </div>
               </section>
 

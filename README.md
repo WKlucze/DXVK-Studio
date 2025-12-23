@@ -120,8 +120,8 @@ npm run build    # Production build
 | ✅ | One-click DXVK install/uninstall |
 | ✅ | Config editor with visual UI |
 | ✅ | Anti-cheat detection |
-| 🔜 | Per-game configuration profiles |
-| 🔜 | HUD position/scale editor |
+| ✅ | Per-game configuration profiles |
+| ✅ | HUD position/scale editor |
 | 📋 | Profile import/export |
 | 📋 | Linux support |
 

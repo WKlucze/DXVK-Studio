@@ -25,7 +25,8 @@ import {
   readConfig
 } from './services/deployer'
 import { detectAntiCheat, getAntiCheatSummary } from './services/anti-cheat'
-import type { Game, DxvkFork, DxvkConfig } from '../src/shared/types'
+import { getAllProfiles, saveProfile, deleteProfile } from './services/profile-manager'
+import type { Game, DxvkFork, DxvkConfig, DxvkProfile } from '../src/shared/types'
 
 // ============================================
 // Build Paths
@@ -54,7 +55,7 @@ function createWindow() {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -100,6 +101,43 @@ app.on('window-all-closed', () => {
 })
 
 // ============================================
+// Security Helpers
+// ============================================
+
+import { resolve } from 'path'
+
+/**
+ * Validate that a path is safe to access
+ * Ensures we don't access system files or escape intended directories
+ */
+function isValidGamePath(path: string): boolean {
+  if (!path) return false
+
+  try {
+    const normalized = resolve(path)
+
+    // Basic blocklist
+    const blockList = [
+      'C:\\Windows',
+      'C:\\Program Files',
+      'C:\\Program Files (x86)',
+      '/bin',
+      '/usr',
+      '/etc'
+    ]
+
+    if (blockList.some(blocked => normalized.startsWith(blocked) && normalized.length === blocked.length)) {
+      return false
+    }
+
+    // Must exist
+    return existsSync(normalized)
+  } catch {
+    return false
+  }
+}
+
+// ============================================
 // IPC Handlers - File Dialogs
 // ============================================
 
@@ -125,10 +163,12 @@ ipcMain.handle('dialog:openFolder', async () => {
 // ============================================
 
 ipcMain.handle('fs:exists', async (_, path: string) => {
+  if (!isValidGamePath(path)) return false
   return existsSync(path)
 })
 
 ipcMain.handle('shell:openPath', async (_, path: string) => {
+  if (!isValidGamePath(path)) return 'Invalid path'
   return shell.openPath(path)
 })
 
@@ -254,14 +294,17 @@ ipcMain.handle('games:checkSteam', async () => {
 // ============================================
 
 ipcMain.handle('pe:analyze', async (_, exePath: string) => {
+  if (!isValidGamePath(exePath)) return { architecture: 'unknown', machineType: 0, isValid: false, error: 'Invalid path' }
   return analyzeExecutable(exePath)
 })
 
 ipcMain.handle('pe:findExecutables', async (_, gamePath: string) => {
+  if (!isValidGamePath(gamePath)) return []
   return findGameExecutables(gamePath)
 })
 
 ipcMain.handle('pe:getVersionInfo', async (_, exePath: string) => {
+  if (!isValidGamePath(exePath)) return {}
   return getPeVersionInfo(exePath)
 })
 
@@ -317,6 +360,7 @@ ipcMain.handle('dxvk:install', async (
   version: string,
   architecture: '32' | '64'
 ) => {
+  if (!isValidGamePath(gamePath)) return { success: false, error: 'Invalid game path' }
   try {
     const manifest = installDxvk(gamePath, gameId, fork, version, architecture)
     return { success: true, manifest }
@@ -326,6 +370,7 @@ ipcMain.handle('dxvk:install', async (
 })
 
 ipcMain.handle('dxvk:uninstall', async (_, gamePath: string) => {
+  if (!isValidGamePath(gamePath)) return { success: false, error: 'Invalid game path' }
   try {
     const result = uninstallDxvk(gamePath)
     return { success: result }
@@ -335,6 +380,8 @@ ipcMain.handle('dxvk:uninstall', async (_, gamePath: string) => {
 })
 
 ipcMain.handle('dxvk:checkStatus', async (_, gamePath: string) => {
+  if (!isValidGamePath(gamePath)) return { installed: false }
+
   const installed = isDxvkInstalled(gamePath)
   if (!installed) {
     return { installed: false }
@@ -356,6 +403,7 @@ ipcMain.handle('dxvk:checkStatus', async (_, gamePath: string) => {
 // ============================================
 
 ipcMain.handle('config:save', async (_, gamePath: string, config: DxvkConfig) => {
+  if (!isValidGamePath(gamePath)) return { success: false, error: 'Invalid game path' }
   try {
     writeConfig(gamePath, config)
     return { success: true }
@@ -364,8 +412,36 @@ ipcMain.handle('config:save', async (_, gamePath: string, config: DxvkConfig) =>
   }
 })
 
+
 ipcMain.handle('config:read', async (_, gamePath: string) => {
+  if (!isValidGamePath(gamePath)) return null
   return readConfig(gamePath)
+})
+
+// ============================================
+// IPC Handlers - Profiles
+// ============================================
+
+ipcMain.handle('profiles:getAll', async () => {
+  return getAllProfiles()
+})
+
+ipcMain.handle('profiles:save', async (_, profile: DxvkProfile) => {
+  try {
+    const saved = saveProfile(profile)
+    return { success: true, profile: saved }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('profiles:delete', async (_, id: string) => {
+  try {
+    const success = deleteProfile(id)
+    return { success }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
 })
 
 // ============================================
@@ -373,10 +449,12 @@ ipcMain.handle('config:read', async (_, gamePath: string) => {
 // ============================================
 
 ipcMain.handle('anticheat:detect', async (_, gamePath: string) => {
+  if (!isValidGamePath(gamePath)) return []
   return detectAntiCheat(gamePath)
 })
 
 ipcMain.handle('anticheat:summary', async (_, gamePath: string) => {
+  if (!isValidGamePath(gamePath)) return { hasAntiCheat: false, highRisk: false, detected: [] }
   return getAntiCheatSummary(gamePath)
 })
 

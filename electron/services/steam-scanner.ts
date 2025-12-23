@@ -30,9 +30,26 @@ export function findSteamPath(): string | null {
     }
   }
 
-  // Check registry as fallback (Windows)
-  // For now we'll rely on common paths
-  return null
+
+
+// Check registry as fallback (Windows)
+try {
+  const { execSync } = require('child_process')
+  // HKEY_CURRENT_USER\Software\Valve\Steam\SteamPath
+  const stdout = execSync('reg query "HKCU\\Software\\Valve\\Steam" /v SteamPath', { stdio: 'pipe' }).toString()
+  const match = stdout.match(/\s+SteamPath\s+REG_SZ\s+(.+)/i)
+  if (match && match[1]) {
+    // Registry path uses forward slashes often, normalize it
+    const regPath = match[1].trim().split('/').join('\\')
+    if (existsSync(join(regPath, 'steamapps', 'libraryfolders.vdf'))) {
+      return regPath
+    }
+  }
+} catch {
+  // Registry query failed, ignore
+}
+
+return null
 }
 
 /**

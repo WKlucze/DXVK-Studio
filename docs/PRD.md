@@ -56,13 +56,15 @@ Democratize DXVK usage by transforming it from a command-line-driven utility int
 | Settings/Logs views | ✅ Complete | P2 |
 | GOG Galaxy integration | ✅ Complete | P1 |
 | Epic Games Store integration | ✅ Complete | P1 |
+| Game-specific profiles | ✅ Complete | P1 |
+| HUD configuration UI | ✅ Complete | P1 |
 
 ### Post-MVP Features
 
 | Feature | Target Release |
 |---------|---------------|
-| Game-specific profiles | v1.1 |
-| HUD configuration UI | v1.1 |
+
+
 | Profile import/export | v1.2 |
 | Linux Wine/Proton support | v2.0 |
 
