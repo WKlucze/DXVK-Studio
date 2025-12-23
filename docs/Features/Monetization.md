@@ -1,7 +1,7 @@
 # Feature: Monetization & Support
 
 ## Description
-DXVK Studio follows an **Open Core** monetization model. The source code is open (MIT) and free to build, while convenience features (pre-built binaries) and support avenues provide sustainability.
+DXVK Studio follows an **Open Core** monetization model. The source code is open (GPL-3.0) and free to build, while convenience features (pre-built binaries) and support avenues provide sustainability.
 
 ## Strategy
 - **Community Edition**: Free, full-featured source code available on GitHub.
