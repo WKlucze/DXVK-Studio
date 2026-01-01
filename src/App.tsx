@@ -22,12 +22,14 @@ import {
 } from 'lucide-react'
 import type { Game, DxvkFork } from './shared/types'
 
-import { ContextMenu } from './components/ContextMenu'
-import { ConfigEditorModal } from './components/ConfigEditorModal'
-import { Vkd3dConfigModal } from './components/Vkd3dConfigModal'
-import { OnboardingWizard } from './components/OnboardingWizard'
-import { CommandPalette } from './components/CommandPalette'
-import { TitleBar } from './components/TitleBar'
+import {
+  ContextMenu,
+  ConfigEditorModal,
+  Vkd3dConfigModal,
+  OnboardingWizard,
+  CommandPalette,
+  TitleBar
+} from './components'
 
 // Check if running in Electron
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined
@@ -1421,6 +1423,60 @@ function SettingsView({ onClearGames }: { onClearGames: () => void }) {
                   DXVK Studio helps you manage DXVK installations across your game library.
                   Built with Electron, React, and TypeScript.
                 </p>
+              </div>
+            </div>
+
+            <div className="glass-card p-6 border-accent-warning/30 bg-accent-warning/5">
+              <h3 className="text-lg font-semibold text-studio-200 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-accent-warning" />
+                License &amp; Distribution Notice
+              </h3>
+
+              <div className="space-y-4">
+                <div className="bg-accent-warning/10 border border-accent-warning/30 rounded-lg p-3">
+                  <p className="text-sm font-semibold text-accent-warning">
+                    Binary distribution is prohibited
+                  </p>
+                </div>
+
+                <div className="space-y-2 text-sm text-studio-300">
+                  <p>
+                    <strong className="text-studio-100">AGPL-3.0 with Additional Terms</strong> (applies retroactively to all versions)
+                  </p>
+                  <p className="text-studio-400 leading-relaxed">
+                    This software is open source for personal use only. You may not distribute
+                    compiled binaries, installers, or executable files. Binary distribution rights
+                    are exclusively reserved to the copyright holder.
+                  </p>
+                  <div className="bg-studio-800/50 border border-studio-700 rounded p-2 text-xs text-studio-400 space-y-1">
+                    <p className="font-medium text-studio-300">Enforcement may include:</p>
+                    <ul className="list-disc list-inside space-y-0.5 ml-2">
+                      <li>DMCA takedown notices</li>
+                      <li>Copyright infringement litigation</li>
+                      <li>Statutory damages under applicable law</li>
+                    </ul>
+                  </div>
+                  <p className="text-xs text-studio-400 pt-1">
+                    If you distributed binaries before 2026-01-02, you must remove them within 7 days.
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => window.open('https://github.com/Zendevve/dxvk-studio/blob/main/LICENSE.ADDITIONAL', '_blank')}
+                    className="text-xs btn-secondary flex items-center gap-1.5"
+                  >
+                    <FileText className="w-3 h-3" />
+                    Read Complete Terms
+                  </button>
+                  <button
+                    onClick={() => window.open('https://guinto2.gumroad.com/l/dxvkstudio', '_blank')}
+                    className="text-xs btn-secondary flex items-center gap-1.5"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Official Builds
+                  </button>
+                </div>
               </div>
             </div>
           </div>
