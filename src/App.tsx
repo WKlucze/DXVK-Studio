@@ -1381,7 +1381,7 @@ function SettingsView({ onClearGames }: { onClearGames: () => void }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   onClick={() => window.open('https://github.com/sponsors/Zendevve', '_blank')}
-                  className="btn-secondary flex items-center gap-2"
+                  className="btn-secondary flex items-center justify-center gap-2 py-3"
                   title="Support development"
                 >
                   <Heart className="w-4 h-4" />
@@ -1391,17 +1391,8 @@ function SettingsView({ onClearGames }: { onClearGames: () => void }) {
                   href="https://guinto2.gumroad.com/l/dxvkstudio"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-secondary flex items-center gap-2"
-                  title="Purchase official build"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Official Store
-                </a>
-                <a
-                  href="https://guinto2.gumroad.com/l/dxvkstudio"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="btn-secondary flex items-center justify-center gap-2 py-3"
+                  title="Purchase official build"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Official Store
