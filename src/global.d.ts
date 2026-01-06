@@ -26,9 +26,16 @@ declare const __APP_VERSION__: string
 declare global {
   interface Window {
     electronAPI: {
+      // Window Controls
+      windowMinimize: () => Promise<void>
+      windowMaximize: () => Promise<void>
+      windowClose: () => Promise<void>
+      windowIsMaximized: () => Promise<boolean>
+
       // Dialogs
       openFileDialog: () => Promise<string | null>
       openFolderDialog: () => Promise<string | null>
+      openExternal: (url: string) => Promise<void>
 
       // File System
       pathExists: (path: string) => Promise<boolean>
@@ -102,6 +109,16 @@ declare global {
         highRisk: boolean
         detected: string[]
       }>
+
+      // IGDB Integration
+      igdbGetCredentials: () => Promise<{ clientId: string; clientSecret: string } | null>
+      igdbSetCredentials: (creds: { clientId: string; clientSecret: string }) => Promise<boolean>
+      igdbTestConnection: (creds?: { clientId: string; clientSecret: string }) => Promise<{ success: boolean; message: string }>
+      igdbClearCredentials: () => Promise<boolean>
+      igdbIsConfigured: () => Promise<boolean>
+      igdbSearch: (term: string) => Promise<any[]>
+      igdbGetDetails: (igdbId: number) => Promise<any>
+      igdbMatchBySteamId: (steamAppId: string) => Promise<any>
     }
   }
 }

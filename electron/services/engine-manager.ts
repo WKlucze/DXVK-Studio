@@ -442,6 +442,8 @@ export function getEngineDlls(fork: DxvkFork, version: string, architecture: '32
   // We will assume standard structure for now.
   let dllPath = join(versionPath, archFolder)
 
+  console.log(`[DXVK Studio] Looking for DLLs in: ${dllPath}`)
+
   // Handle case where arch folders are named differently?
   // DXVK usually uses x32/x64 in our cache (we might have renamed them on extraction? No, downloadEngine strips 1 level).
   // DXVK releases: dxvk-x.y.z/x64/
@@ -451,6 +453,7 @@ export function getEngineDlls(fork: DxvkFork, version: string, architecture: '32
   // VKD3D might drop 32-bit support in future, but for now it exists.
 
   if (!existsSync(dllPath)) {
+    console.log(`[DXVK Studio] DLL path does NOT exist: ${dllPath}`)
     return []
   }
 

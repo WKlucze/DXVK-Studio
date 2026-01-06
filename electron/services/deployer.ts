@@ -243,8 +243,12 @@ export function installEngine(
     throw new Error('Cannot install engine: unknown architecture')
   }
 
+  console.log(`[DXVK Studio] Installing ${fork} ${version} for ${architecture}-bit game at ${gamePath}`)
+
   const componentType = fork === 'vkd3d' ? 'vkd3d' : 'dxvk'
   const sourceDlls = getEngineDlls(fork, version, architecture)
+
+  console.log(`[DXVK Studio] Found ${sourceDlls.length} DLLs to install:`, sourceDlls)
 
   if (sourceDlls.length === 0) {
     throw new Error(`No DLLs found for ${fork} ${version} (${architecture}-bit)`)

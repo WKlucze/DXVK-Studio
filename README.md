@@ -8,8 +8,9 @@ A Windows desktop app that makes [DXVK](https://github.com/doitsujin/dxvk) easy 
 
 [![Release](https://img.shields.io/github/v/release/Zendevve/dxvk-studio?style=flat-square&color=0969da)](https://github.com/Zendevve/dxvk-studio/releases)
 [![Downloads](https://img.shields.io/github/downloads/Zendevve/dxvk-studio/total?style=flat-square&color=2da44e)](https://github.com/Zendevve/dxvk-studio/releases)
-[![License](https://img.shields.io/badge/license-GPLv3-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPLv3-blue?style=flat-square)](LICENSE)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-47848f?style=flat-square&logo=electron&logoColor=white)](https://electronjs.org)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/invite/q5mSx7uFuC)
 
 <br>
 
@@ -41,7 +42,7 @@ DXVK is a translation layer that converts DirectX calls to Vulkan. It can **boos
 
 ## Installation
 
-> **Open Core Model**: The source code is free and open under GPL-3.0. Pre-built binaries are available for purchase.
+> **License Notice**: Source code is free and open under AGPL-3.0 with additional terms. **Binary distribution is prohibited.** Only the copyright holder (Zendevve) may distribute compiled binaries. Users may build from source for personal use only, or purchase official builds. See LICENSE.ADDITIONAL for complete terms.
 
 ---
 
@@ -204,17 +205,81 @@ npm run build        # Production build
 
 ---
 
+## Redistribution Policy
+
+This software is licensed under AGPL-3.0 with additional terms (see `LICENSE.ADDITIONAL`).
+
+### What You May Do
+
+- ✅ Build from source for **your personal, non-commercial use only**
+- ✅ Modify the source code for your own private purposes
+- ✅ Distribute **only the uncompiled source code** (in compliance with AGPL-3.0)
+- ✅ Contribute improvements to the official repository via pull requests
+- ✅ Help others by sharing build instructions (not pre-built binaries)
+
+### What Is Prohibited
+
+- ❌ Distributing compiled binaries, installers, or executable files
+- ❌ Hosting pre-built releases for download on any platform
+- ❌ Creating "repacks" or unofficial builds
+- ❌ Sharing .exe files via any method (file hosts, Discord, forums, torrents)
+- ❌ Building binaries for others (including friends or family)
+- ❌ Posting compiled releases on GitHub or elsewhere
+
+### Retroactive Enforcement
+
+These terms apply retroactively to all versions. If you distributed binaries before 2026-01-02:
+
+1. You must remove all distributed binaries within 7 days
+2. Delete downloads from all platforms (GitHub Releases, file hosts, etc.)
+3. Notify recipients that distribution was unauthorized
+4. Cease all future binary distribution
+
+Failure to comply will be treated as willful copyright infringement.
+
+### Enforcement
+
+Binary distribution rights are exclusively reserved to the copyright holder (Zendevve).
+
+Unauthorized distribution may result in:
+- DMCA takedown notices
+- Cease and desist letters
+- Copyright infringement litigation
+- Statutory damages under applicable law
+- Recovery of legal costs
+
+### Official Distribution
+
+Authorized sources for compiled binaries:
+- [Official Gumroad Store](https://guinto2.gumroad.com/l/dxvkstudio)
+- [Official GitHub Releases](https://github.com/Zendevve/dxvk-studio/releases) (only releases posted by @Zendevve)
+
+Any other source is unauthorized.
+
+---
+
 ## Contributing
 
-Pull requests welcome. For significant changes, open an issue first.
+Pull requests are welcome and encouraged! If you fork this project, please submit your improvements back to the main repository to keep the community unified.
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 
+## Community
+
+Join the [Discord server](https://discord.com/invite/q5mSx7uFuC) to ask questions, suggest features, or hang out. This is the best place to reach the developer.
+
+---
+
 ## License
 
-[GPL-3.0](LICENSE) — use it freely, but share your changes.
+[AGPL-3.0](LICENSE) with [Additional Terms](LICENSE.ADDITIONAL)
+
+**Source code**: Open and free under AGPL-3.0
+**Compiled binaries**: Distribution rights reserved to copyright holder only
+
+You must share your source code changes if you distribute. Binary redistribution is prohibited under the additional terms.
 
 ---
 

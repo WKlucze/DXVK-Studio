@@ -45,14 +45,12 @@ describe('Profile Manager', () => {
   })
 
   describe('getAllProfiles', () => {
-    it('should return builtin profiles when no user profiles exist', () => {
+    it('should return empty array when no user profiles exist', () => {
       const profiles = getAllProfiles()
-      const builtins = profiles.filter(p => p.isBuiltin)
-      expect(builtins.length).toBeGreaterThan(0)
-      expect(profiles.length).toBe(builtins.length)
+      expect(profiles.length).toBe(0)
     })
 
-    it('should merge user profiles with builtins', () => {
+    it('should return user profiles', () => {
       const userProfiles: DxvkProfile[] = [{
         id: 'user-1',
         name: 'My Custom Profile',
@@ -62,14 +60,14 @@ describe('Profile Manager', () => {
 
       const profiles = getAllProfiles()
       expect(profiles.find(p => p.id === 'user-1')).toBeDefined()
-      expect(profiles.some(p => p.isBuiltin)).toBe(true)
+      expect(profiles.length).toBe(1)
     })
 
     it('should handle corrupted profiles file', () => {
       writeFileSync(PROFILES_PATH, 'invalid json {')
       const profiles = getAllProfiles()
-      // Should still return builtins
-      expect(profiles.length).toBeGreaterThan(0)
+      // Should return empty array on corruption
+      expect(profiles.length).toBe(0)
     })
   })
 
@@ -117,12 +115,6 @@ describe('Profile Manager', () => {
       const saved = JSON.parse(readFileSync(PROFILES_PATH, 'utf-8'))
       expect(saved.length).toBe(1)
       expect(saved[0].id).toBe(p2.id)
-    })
-
-    it('should prevent deleting builtin profile', () => {
-      expect(() => {
-        deleteProfile('builtin-performance')
-      }).toThrow('Cannot delete built-in profile')
     })
 
     it('should return false for non-existent profile', () => {

@@ -12,6 +12,14 @@ export interface DownloadProgress {
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
   // ============================================
+  // Window Controls
+  // ============================================
+  windowMinimize: () => ipcRenderer.invoke('window:minimize'),
+  windowMaximize: () => ipcRenderer.invoke('window:maximize'),
+  windowClose: () => ipcRenderer.invoke('window:close'),
+  windowIsMaximized: () => ipcRenderer.invoke('window:isMaximized') as Promise<boolean>,
+
+  // ============================================
   // File Dialogs
   // ============================================
   openFileDialog: () => ipcRenderer.invoke('dialog:openFile') as Promise<string | null>,
@@ -149,10 +157,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }>>,
   getAntiCheatSummary: (gamePath: string) =>
     ipcRenderer.invoke('anticheat:summary', gamePath) as Promise<{
+
       hasAntiCheat: boolean
       highRisk: boolean
       detected: string[]
     }>,
+
+  // ============================================
+  // IGDB Integration
+  // ============================================
+  igdbGetCredentials: () => ipcRenderer.invoke('igdb:getCredentials') as Promise<any>, // Typed in global
+  igdbSetCredentials: (creds: any) => ipcRenderer.invoke('igdb:setCredentials', creds) as Promise<{ success: boolean; error?: string }>,
+  igdbClearCredentials: () => ipcRenderer.invoke('igdb:clearCredentials') as Promise<{ success: boolean; error?: string }>,
+  igdbTestConnection: () => ipcRenderer.invoke('igdb:testConnection') as Promise<{ success: boolean; error?: string }>,
+  igdbIsConfigured: () => ipcRenderer.invoke('igdb:isConfigured') as Promise<boolean>,
+  igdbSearch: (query: string) => ipcRenderer.invoke('igdb:search', query) as Promise<Array<{ id: number; name: string; coverUrl?: string }>>,
+  igdbGetDetails: (igdbId: number) => ipcRenderer.invoke('igdb:getDetails', igdbId) as Promise<any>, // Typed in global
+  igdbMatchBySteamId: (steamAppId: string) => ipcRenderer.invoke('igdb:matchBySteamId', steamAppId) as Promise<any>,
+
+  // ============================================
+  // Common
+  // ============================================
+  openExternal: (url: string) => ipcRenderer.invoke('common:openExternal', url) as Promise<void>
 })
 
 // TypeScript declarations for the exposed API
@@ -162,6 +188,7 @@ declare global {
       // Dialogs
       openFileDialog: () => Promise<string | null>
       openFolderDialog: () => Promise<string | null>
+      openExternal: (url: string) => Promise<void>
 
       // File System
       pathExists: (path: string) => Promise<boolean>
@@ -241,6 +268,36 @@ declare global {
         highRisk: boolean
         detected: string[]
       }>
+
+      // IGDB Integration
+      igdbGetCredentials: () => Promise<{ clientId: string; clientSecret: string } | null>
+      igdbSetCredentials: (creds: { clientId: string; clientSecret: string }) => Promise<{ success: boolean; error?: string }>
+      igdbClearCredentials: () => Promise<{ success: boolean; error?: string }>
+      igdbTestConnection: () => Promise<{ success: boolean; error?: string }>
+      igdbIsConfigured: () => Promise<boolean>
+      igdbSearch: (query: string) => Promise<Array<{ id: number; name: string; coverUrl?: string }>>
+      igdbGetDetails: (igdbId: number) => Promise<{
+        id: number
+        name: string
+        summary?: string
+        coverUrl?: string
+        genres?: string[]
+        developers?: string[]
+        publishers?: string[]
+        releaseDate?: string
+        rating?: number
+      } | null>
+      igdbMatchBySteamId: (steamAppId: string) => Promise<{
+        id: number
+        name: string
+        summary?: string
+        coverUrl?: string
+        genres?: string[]
+        developers?: string[]
+        publishers?: string[]
+        releaseDate?: string
+        rating?: number
+      } | null>
     }
   }
 }
